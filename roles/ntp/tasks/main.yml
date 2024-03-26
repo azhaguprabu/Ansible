@@ -1,0 +1,24 @@
+---
+- name: Install ntp package
+  package:
+    name: chrony
+    state: present
+
+- name: set timezone to Asia/Tokyo
+  timezone:
+    name: Asia/Calcutta
+
+- name: ntp configuration
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart ntp
+
+- name: ntp service up and running
+  service:
+    name: chrony
+    state: started
+    enabled: yes

@@ -1,0 +1,20 @@
+---
+- name: haproxy package installation 
+  package:
+    name: haproxy
+    state: present
+
+- name: haproxy configuration 
+  template:
+    src: k8s-haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: 0644
+  notify: relaod_haproxy
+
+- name: haproxy service up 
+  service: 
+    name: haproxy
+    state: started
+    enabled: yes

@@ -1,0 +1,9 @@
+---
+- name: apt_udpate
+  shell: apt-get update
+
+- name: reload_sysctl
+  shell: sysctl --system
+
+- name: k8s_module_load
+  shell: modprobe overlay && modprobe br_netfilter
