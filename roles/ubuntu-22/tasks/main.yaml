@@ -1,0 +1,37 @@
+---
+- name: Update package cache
+  apt:
+    update_cache: yes
+
+- name: Upgrade pacakge
+  apt:
+    upgrade: dist
+
+- name: ntp pacakge installation 
+  package:
+    name: chrony
+    state: present 
+
+- name: chrony.conf configuration 
+  template: 
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart chronyd
+
+- name: chronyd start
+  service:
+    name: chronyd
+    state: started
+
+- name: enable bash HISOTRYTIME
+  template:
+    src:
+    dest:
+    owner:
+    group:
+    mode: 
+
+- name: 
