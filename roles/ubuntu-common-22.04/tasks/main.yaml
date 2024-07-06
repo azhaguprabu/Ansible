@@ -1,1 +1,88 @@
-#write ansible code to write hostname on playbook
+- name: Set hostname
+  hostname: 
+    name: "{{ inventory_hostname }}"
+
+- name: Install packages
+  apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - software-properties-common
+    - python3-pip
+    - virtualenv
+    - python3-setuptools
+    - syslog
+    - libpam-pwquality
+    - libpam-cracklib
+
+- name: Replace line in file
+  lineinfile:
+    path: /etc/pam.d/common-password
+    regexp: '^password\s+requisite.*$'
+    line: 'password requisite pam_cracklib.so retry=3 minlen=16 difok=3 ucredit=-1 lcredit=-2 dcredit=-2 ocredit=-2'
+
+- name: Append HISTTIMEFORMAT to .bashrc
+  lineinfile:
+    path: /root/.bashrc
+    line: 'export HISTTIMEFORMAT="%F %T"'
+    insertafter: EOF
+
+- name: Disable root login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin\s+yes$'
+    line: 'PermitRootLogin no'
+  notify: Restart SSH
+
+- name: Ensure root cannot log in via password
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication\s+yes$'
+    line: 'PasswordAuthentication no'
+  notify: Restart SSH
+
+- name: Ensure admin group exists
+  ansible.builtin.group:
+    name: admin
+    state: present
+
+- name: Create admin user account
+  ansible.builtin.user: 
+    name: admin
+    state: present
+    shell: /bin/bash
+    group: admin
+    append: yes
+    createhome: yes
+    password: "{{ 'admin_password' | password_hash('sha512') }}"
+
+- name: Ensure sudo group exists
+  ansible.builtin.group:
+    name: sudo
+    state: present
+
+- name: Install nftables
+  become: true
+  ansible.builtin.package:
+    name: nftables
+    state: present
+
+- name: Configure nftables rules
+  become: true
+  ansible.builtin.template:
+    src: nftables-rules.nft.j2
+    dest: /etc/nftables.conf
+  notify: Reload nftables
+
+- name: Ensure nftables service is enabled and started
+  become: true
+  ansible.builtin.service:
+    name: nftables
+    state: started
+    enabled: true
